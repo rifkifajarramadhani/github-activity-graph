@@ -1,13 +1,46 @@
 services:
-  activity-graph:
-    build: .
+  activity-graph-dev:
+    profiles: [dev]
+    build:
+      context: .
+      target: dev
     ports:
       - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      NODE_ENV: development
+      HOST: "0.0.0.0"
+      PORT: "3000"
+    volumes:
+      - ./src:/app/src
+      - ./tsconfig.json:/app/tsconfig.json
+
+  activity-graph-prod:
+    profiles: [prod]
+    image: ghcr.io/rifkifajarramadhani/github-activity-graph:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      target: production
+    expose:
+      - "3000"
     env_file: .env
     environment:
       HOST: "0.0.0.0"
       PORT: "3000"
     restart: unless-stopped
+    networks:
+      - edge
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge
+      - "traefik.http.routers.activity-graph.rule=Host(`github-stats.rifkiramadhani.my.id`)"
+      - traefik.http.routers.activity-graph.entrypoints=websecure
+      - traefik.http.routers.activity-graph.tls=true
+      - traefik.http.routers.activity-graph.tls.certresolver=letsencrypt
+      - traefik.http.services.activity-graph.loadbalancer.server.port=3000
+      - traefik.http.middlewares.activity-graph-ratelimit.ratelimit.average=100
+      - traefik.http.middlewares.activity-graph-ratelimit.ratelimit.burst=200
+      - traefik.http.routers.activity-graph.middlewares=activity-graph-ratelimit
     healthcheck:
       test:
         [
@@ -20,3 +53,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+networks:
+  edge:
+    name: edge
+    external: true

@@ -16,7 +16,7 @@ COPY tsconfig.json ./
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
-FROM node:22-alpine
+FROM node:22-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
