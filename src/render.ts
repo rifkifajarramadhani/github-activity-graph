@@ -98,16 +98,31 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function toSmoothPath(points: readonly Point[], yMin: number, yMax: number): string {
+// Control polygon length is an upper bound on a cubic's arc length. Overshooting
+// is harmless for the draw-on dash, undershooting leaves a visible gap.
+function cubicLengthBound(p1: Point, cp1: Point, cp2: Point, p2: Point): number {
+  return (
+    Math.hypot(cp1.x - p1.x, cp1.y - p1.y) +
+    Math.hypot(cp2.x - cp1.x, cp2.y - cp1.y) +
+    Math.hypot(p2.x - cp2.x, p2.y - cp2.y)
+  );
+}
+
+function toSmoothPath(
+  points: readonly Point[],
+  yMin: number,
+  yMax: number,
+): { d: string; length: number } {
   const first = points[0];
   if (!first) {
-    return "";
+    return { d: "", length: 0 };
   }
   if (points.length === 1) {
-    return `M ${round(first.x)} ${round(first.y)}`;
+    return { d: `M ${round(first.x)} ${round(first.y)}`, length: 0 };
   }
 
   const parts = [`M ${round(first.x)} ${round(first.y)}`];
+  let length = 0;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i === 0 ? 0 : i - 1];
     const p1 = points[i];
@@ -116,15 +131,20 @@ function toSmoothPath(points: readonly Point[], yMin: number, yMax: number): str
     if (!p0 || !p1 || !p2 || !p3) {
       continue;
     }
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = clamp(p1.y + (p2.y - p0.y) / 6, yMin, yMax);
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = clamp(p2.y - (p3.y - p1.y) / 6, yMin, yMax);
+    const cp1 = {
+      x: p1.x + (p2.x - p0.x) / 6,
+      y: clamp(p1.y + (p2.y - p0.y) / 6, yMin, yMax),
+    };
+    const cp2 = {
+      x: p2.x - (p3.x - p1.x) / 6,
+      y: clamp(p2.y - (p3.y - p1.y) / 6, yMin, yMax),
+    };
+    length += cubicLengthBound(p1, cp1, cp2, p2);
     parts.push(
-      `C ${round(cp1x)} ${round(cp1y)}, ${round(cp2x)} ${round(cp2y)}, ${round(p2.x)} ${round(p2.y)}`,
+      `C ${round(cp1.x)} ${round(cp1.y)}, ${round(cp2.x)} ${round(cp2.y)}, ${round(p2.x)} ${round(p2.y)}`,
     );
   }
-  return parts.join(" ");
+  return { d: parts.join(" "), length };
 }
 
 function plotPoints(days: readonly ContributionDay[]): Point[] {
@@ -163,7 +183,7 @@ export function renderGraph(args: {
 }): string {
   const { username, contributions, theme, hideBorder, days } = args;
   const points = plotPoints(contributions.days);
-  const linePath = toSmoothPath(points, PAD.top, HEIGHT - PAD.bottom);
+  const { d: linePath, length: lineLength } = toSmoothPath(points, PAD.top, HEIGHT - PAD.bottom);
   const first = points[0];
   const last = points[points.length - 1];
   const baseline = HEIGHT - PAD.bottom;
@@ -181,7 +201,7 @@ export function renderGraph(args: {
   const title = `${username}'s Contribution Graph`;
   const subtitle = `${contributions.total} contributions in the last ${days} days`;
   const gradientId = `ag-area-${theme.name}`;
-  const pathLength = Math.max(innerWidth * 1.4, 400);
+  const pathLength = Math.ceil(lineLength) + 1;
 
   const gridSvg = grids
     .map(
