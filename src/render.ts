@@ -3,7 +3,7 @@ import type { Theme } from "./themes.js";
 
 const WIDTH = 840;
 const HEIGHT = 320;
-const PAD = { top: 56, right: 28, bottom: 40, left: 52 };
+const PAD = { top: 64, right: 28, bottom: 40, left: 52 };
 
 const MONTHS = [
   "Jan",
@@ -104,7 +104,7 @@ function cubicLengthBound(p1: Point, cp1: Point, cp2: Point, p2: Point): number 
   return (
     Math.hypot(cp1.x - p1.x, cp1.y - p1.y) +
     Math.hypot(cp2.x - cp1.x, cp2.y - cp1.y) +
-    Math.hypot(p2.x - cp2.x, p2.y - cp2.y)
+    Math.hypot(p2.x - cp2.x, p2.y - p2.y)
   );
 }
 
@@ -161,17 +161,38 @@ function plotPoints(days: readonly ContributionDay[]): Point[] {
 
 function gridLines(maxCount: number): { y: number; label: string }[] {
   const innerHeight = HEIGHT - PAD.top - PAD.bottom;
-  const ticks = 3;
-  const lines: { y: number; label: string }[] = [];
-  for (let i = 0; i < ticks; i++) {
-    const fraction = i / (ticks - 1);
-    const value = Math.round(maxCount * (1 - fraction));
-    lines.push({
-      y: PAD.top + fraction * innerHeight,
-      label: String(value),
-    });
+  return [
+    {
+      y: PAD.top + 0.5 * innerHeight,
+      label: String(Math.round(maxCount / 2)),
+    },
+    {
+      y: PAD.top + innerHeight,
+      label: "0",
+    },
+  ];
+}
+
+function peakIndex(days: readonly ContributionDay[]): number {
+  let best = 0;
+  for (let i = 0; i < days.length; i++) {
+    const day = days[i];
+    const current = days[best];
+    if (day && current && day.contributionCount >= current.contributionCount) {
+      best = i;
+    }
   }
-  return lines;
+  return best;
+}
+
+function peakAnchor(x: number): "start" | "middle" | "end" {
+  if (x < PAD.left + 36) {
+    return "start";
+  }
+  if (x > WIDTH - PAD.right - 36) {
+    return "end";
+  }
+  return "middle";
 }
 
 export function renderGraph(args: {
@@ -199,15 +220,19 @@ export function renderGraph(args: {
   const lastIndex = Math.max(contributions.days.length - 1, 1);
   const border = hideBorder ? "none" : theme.border;
   const title = `${username}'s Contribution Graph`;
-  const subtitle = `${contributions.total} contributions in the last ${days} days`;
+  const subtitle = `${contributions.total} CONTRIBUTIONS · ${days} DAYS`;
   const gradientId = `ag-area-${theme.name}`;
   const pathLength = Math.ceil(lineLength) + 1;
+  const peakIdx = peakIndex(contributions.days);
+  const peakPoint = points[peakIdx];
+  const peakDay = contributions.days[peakIdx];
+  const peakCount = peakDay?.contributionCount ?? 0;
 
   const gridSvg = grids
     .map(
       (line) =>
         `<line x1="${PAD.left}" y1="${round(line.y)}" x2="${WIDTH - PAD.right}" y2="${round(line.y)}" stroke="${theme.grid}" stroke-width="1"/>` +
-        `<text x="${PAD.left - 8}" y="${round(line.y + 4)}" text-anchor="end" fill="${theme.axis}" font-size="11">${line.label}</text>`,
+        `<text class="ag-mono" x="${PAD.left - 8}" y="${round(line.y + 4)}" text-anchor="end" fill="${theme.mono}" font-size="10">${line.label}</text>`,
     )
     .join("");
 
@@ -215,44 +240,65 @@ export function renderGraph(args: {
     .map((label) => {
       const x = PAD.left + (label.index / lastIndex) * innerWidth;
       const anchor = label.index === 0 ? "start" : label.index === lastIndex ? "end" : "middle";
-      return `<text x="${round(x)}" y="${HEIGHT - 14}" text-anchor="${anchor}" fill="${theme.axis}" font-size="11">${escapeXml(label.text)}</text>`;
+      return `<text class="ag-mono" x="${round(x)}" y="${HEIGHT - 14}" text-anchor="${anchor}" fill="${theme.mono}" font-size="10">${escapeXml(label.text)}</text>`;
     })
     .join("");
 
   const lastPointSvg = last
-    ? `<circle cx="${round(last.x)}" cy="${round(last.y)}" r="4" fill="${theme.point}"/>`
+    ? `<circle cx="${round(last.x)}" cy="${round(last.y)}" r="5" fill="${theme.background}"/>` +
+      `<circle cx="${round(last.x)}" cy="${round(last.y)}" r="3" fill="${theme.point}"/>`
     : "";
+
+  let peakSvg = "";
+  if (peakPoint && peakCount > 0) {
+    const isLast = peakIdx === points.length - 1;
+    const marker = isLast
+      ? ""
+      : `<circle cx="${round(peakPoint.x)}" cy="${round(peakPoint.y)}" r="2.5" fill="${theme.peak}"/>`;
+    const labelY = round(Math.max(44, peakPoint.y - 12));
+    peakSvg =
+      marker +
+      `<text class="ag-mono" x="${round(peakPoint.x)}" y="${labelY}" text-anchor="${peakAnchor(peakPoint.x)}" fill="${theme.mono}" font-size="10">${peakCount}</text>`;
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-label="${escapeXml(title)}">
   <title>${escapeXml(title)}</title>
   <style>
-    text { font-family: 'Segoe UI', Ubuntu, Sans-Serif; }
+    text { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .ag-mono {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
     .ag-line {
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
       stroke-dasharray: ${round(pathLength)};
       stroke-dashoffset: ${round(pathLength)};
-      animation: ag-draw 1.4s ease forwards;
+      animation: ag-draw 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes ag-draw {
       to { stroke-dashoffset: 0; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .ag-line { animation: none; stroke-dashoffset: 0; }
+    }
   </style>
-  <rect x="0.5" y="0.5" width="${WIDTH - 1}" height="${HEIGHT - 1}" rx="8" fill="${theme.background}" stroke="${border}" stroke-width="1"/>
-  <text x="${PAD.left}" y="28" fill="${theme.title}" font-size="18" font-weight="600">${escapeXml(title)}</text>
-  <text x="${WIDTH - PAD.right}" y="28" text-anchor="end" fill="${theme.subtitle}" font-size="13">${escapeXml(subtitle)}</text>
+  <rect x="0.5" y="0.5" width="${WIDTH - 1}" height="${HEIGHT - 1}" rx="12" fill="${theme.background}" stroke="${border}" stroke-width="1"/>
+  <text x="${PAD.left}" y="30" fill="${theme.title}" font-size="15" font-weight="600" letter-spacing="-0.15">${escapeXml(title)}</text>
+  <text class="ag-mono" x="${WIDTH - PAD.right}" y="30" text-anchor="end" fill="${theme.subtitle}" font-size="11" letter-spacing="0.88">${escapeXml(subtitle)}</text>
   ${gridSvg}
   ${labelSvg}
   <defs>
     <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${theme.area}" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="${theme.area}" stop-opacity="0.02"/>
+      <stop offset="0%" stop-color="${theme.area}" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="${theme.area}" stop-opacity="0"/>
     </linearGradient>
   </defs>
   ${areaPath ? `<path d="${areaPath}" fill="url(#${gradientId})"/>` : ""}
-  ${linePath ? `<path class="ag-line" d="${linePath}" stroke="${theme.line}" stroke-width="2.5"/>` : ""}
+  ${linePath ? `<path class="ag-line" d="${linePath}" stroke="${theme.line}" stroke-width="2"/>` : ""}
+  ${peakSvg}
   ${lastPointSvg}
 </svg>`;
 }
@@ -261,9 +307,15 @@ export function renderErrorGraph(args: { message: string; theme: Theme }): strin
   const { message, theme } = args;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-label="Activity graph error">
-  <style>text { font-family: 'Segoe UI', Ubuntu, Sans-Serif; }</style>
-  <rect x="0.5" y="0.5" width="${WIDTH - 1}" height="${HEIGHT - 1}" rx="8" fill="${theme.background}" stroke="${theme.border}" stroke-width="1"/>
-  <text x="${WIDTH / 2}" y="${HEIGHT / 2 - 8}" text-anchor="middle" fill="${theme.title}" font-size="18" font-weight="600">Could not load activity graph</text>
-  <text x="${WIDTH / 2}" y="${HEIGHT / 2 + 18}" text-anchor="middle" fill="${theme.subtitle}" font-size="13">${escapeXml(message)}</text>
+  <style>
+    text { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .ag-mono {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+  <rect x="0.5" y="0.5" width="${WIDTH - 1}" height="${HEIGHT - 1}" rx="12" fill="${theme.background}" stroke="${theme.border}" stroke-width="1"/>
+  <text x="${PAD.left}" y="30" fill="${theme.title}" font-size="15" font-weight="600" letter-spacing="-0.15">Could not load graph</text>
+  <text class="ag-mono" x="${PAD.left}" y="52" fill="${theme.mono}" font-size="12">${escapeXml(message)}</text>
 </svg>`;
 }

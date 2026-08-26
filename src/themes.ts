@@ -11,32 +11,38 @@ export type Theme = {
   line: string;
   area: string;
   point: string;
+  mono: string;
+  peak: string;
 };
 
 export const themes = {
   dark: {
     name: "dark",
-    background: "#0d1117",
-    border: "#30363d",
-    title: "#e6edf3",
-    subtitle: "#8b949e",
-    grid: "#21262d",
-    axis: "#8b949e",
-    line: "#58a6ff",
-    area: "#58a6ff",
-    point: "#79c0ff",
+    background: "#0D1117",
+    border: "rgba(113,113,122,0.18)",
+    title: "#E4E4E7",
+    subtitle: "#71717A",
+    grid: "rgba(113,113,122,0.18)",
+    axis: "#71717A",
+    line: "#5B9E7E",
+    area: "#5B9E7E",
+    point: "#5B9E7E",
+    mono: "#A1A1AA",
+    peak: "#5B9E7E",
   },
   light: {
     name: "light",
-    background: "#ffffff",
-    border: "#d0d7de",
-    title: "#1f2328",
-    subtitle: "#656d76",
-    grid: "#d0d7de",
-    axis: "#656d76",
-    line: "#0969da",
-    area: "#0969da",
-    point: "#218bff",
+    background: "#FFFFFF",
+    border: "rgba(113,113,122,0.18)",
+    title: "#18181B",
+    subtitle: "#71717A",
+    grid: "rgba(113,113,122,0.18)",
+    axis: "#71717A",
+    line: "#5B9E7E",
+    area: "#5B9E7E",
+    point: "#5B9E7E",
+    mono: "#52525B",
+    peak: "#5B9E7E",
   },
 } as const satisfies Record<ThemeName, Theme>;
 

@@ -40,7 +40,7 @@ export function previewPage(state: PreviewState): string {
     const current = windowDays === days;
     return `<a class="window" href="${escapeHtml(href({ days: windowDays, theme, hideBorder }))}"${current ? ' aria-current="page"' : ""} data-density="${windowDays}">
         <span class="window-ticks" aria-hidden="true"></span>
-        <span class="window-label">${windowDays} days</span>
+        <span class="window-label">${windowDays}</span>
       </a>`;
   }).join("");
 
@@ -50,36 +50,34 @@ export function previewPage(state: PreviewState): string {
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Contribution line</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23143a52'/%3E%3Cpolyline points='4,22 10,14 16,18 22,8 28,12' fill='none' stroke='%23e6c36a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"/>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2309090B'/%3E%3Cpolyline points='5,22 11,14 16,17 22,8 27,12' fill='none' stroke='%235B9E7E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"/>
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
     <style>
       :root {
         color-scheme: dark;
-        --deep: #0c2838;
-        --prussian: #143a52;
-        --rinse: #e7f0f3;
-        --sun: #e6c36a;
-        --ink: #f3f8fa;
-        --mute: #8fb0c0;
-        --tray: #0a1f2c;
-        --focus: #e6c36a;
+        --ground: #09090B;
+        --surface: #18181B;
+        --ink: #E4E4E7;
+        --mute: #71717A;
+        --hair: rgba(113, 113, 122, 0.18);
+        --jade: #5B9E7E;
+        --focus: #5B9E7E;
       }
 
       * { box-sizing: border-box; }
 
       html, body {
         margin: 0;
-        min-height: 100%;
+        min-height: 100dvh;
       }
 
       body {
-        font-family: Outfit, ui-sans-serif, sans-serif;
-        background:
-          radial-gradient(120% 80% at 0% 0%, #1a4e6a 0%, transparent 55%),
-          radial-gradient(90% 70% at 100% 100%, #071820 0%, transparent 50%),
-          var(--deep);
+        font-family: Satoshi, ui-sans-serif, sans-serif;
+        background: var(--ground);
         color: var(--ink);
       }
 
@@ -96,55 +94,74 @@ export function previewPage(state: PreviewState): string {
       .page {
         width: min(1080px, calc(100% - 32px));
         margin: 0 auto;
-        padding: 28px 0 48px;
+        padding: clamp(1.5rem, 4vw, 2.5rem) 0 clamp(3rem, 8vw, 6rem);
         display: grid;
-        gap: 28px;
+        gap: clamp(1.75rem, 4vw, 2.75rem);
       }
 
       .mast {
         display: grid;
-        grid-template-columns: minmax(0, 1.3fr) minmax(16rem, 0.9fr);
-        gap: 20px 32px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.85fr);
+        gap: 20px 40px;
         align-items: end;
       }
 
       h1 {
         margin: 0;
-        font-family: Anybody, Outfit, sans-serif;
-        font-weight: 800;
-        font-stretch: 75%;
-        font-size: clamp(2.4rem, 6vw, 4.4rem);
-        line-height: 0.86;
-        letter-spacing: -0.045em;
+        font-weight: 650;
+        font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+      }
+
+      h1 .spark {
+        display: inline-block;
+        height: 0.72em;
+        width: auto;
+        vertical-align: -0.06em;
+        margin: 0 0.06em;
+        overflow: hidden;
+        border-radius: 0.14em;
+      }
+
+      .spark-line {
+        fill: none;
+        stroke: var(--jade);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 120;
+        stroke-dashoffset: 120;
+        animation: spark-draw 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes spark-draw {
+        to { stroke-dashoffset: 0; }
       }
 
       .lede {
         margin: 0;
         color: var(--mute);
-        font-size: 1.02rem;
+        font-size: 1rem;
         line-height: 1.45;
         max-width: 34ch;
-      }
-
-      .lede strong {
-        color: var(--ink);
-        font-weight: 500;
       }
 
       .copy {
         margin-top: 16px;
         appearance: none;
         border: 0;
-        border-radius: 0;
-        background: var(--sun);
-        color: var(--deep);
-        font: 600 0.92rem Outfit, sans-serif;
-        padding: 0.72rem 1.05rem;
+        border-radius: 0.4rem;
+        background: var(--jade);
+        color: var(--ground);
+        font: 600 0.95rem Satoshi, ui-sans-serif, sans-serif;
+        padding: 0.7rem 1.1rem;
+        min-height: 44px;
         cursor: pointer;
       }
 
       .copy:hover {
-        filter: brightness(1.06);
+        background: color-mix(in srgb, var(--jade) 96%, #FAFAFA);
       }
 
       .copy:active {
@@ -153,17 +170,15 @@ export function previewPage(state: PreviewState): string {
 
       .stage {
         display: grid;
-        gap: 0;
+        gap: 14px;
       }
 
       .well {
-        background: var(--rinse);
-        color: var(--tray);
-        padding: clamp(14px, 2.6vw, 26px);
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.4),
-          0 0 0 1px rgba(8, 30, 44, 0.5),
-          0 28px 50px rgba(6, 18, 28, 0.38);
+        background: var(--surface);
+        padding: clamp(14px, 2.4vw, 24px);
+        border: 1px solid var(--hair);
+        border-radius: 1.25rem;
+        box-shadow: 0 24px 48px rgba(9, 9, 11, 0.45);
       }
 
       .well-meta {
@@ -171,52 +186,48 @@ export function previewPage(state: PreviewState): string {
         justify-content: space-between;
         gap: 12px;
         margin: 0 0 12px;
-        font-size: 0.8rem;
-        letter-spacing: 0.02em;
-        color: #4e7382;
-        font-weight: 500;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        color: var(--mute);
       }
 
       .well img {
         width: 100%;
         height: auto;
         display: block;
+        border-radius: 12px;
       }
 
-      .ruler {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        background: var(--prussian);
-        border: 1px solid rgba(8, 30, 44, 0.55);
-        border-top: 0;
+      .windows {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 4px;
+        justify-content: flex-start;
       }
 
       .window {
         display: grid;
         gap: 8px;
-        padding: 12px 14px 14px;
+        min-width: 72px;
+        min-height: 44px;
+        padding: 8px 14px 10px;
         color: var(--mute);
-        min-width: 0;
-      }
-
-      .window + .window {
-        border-left: 1px solid rgba(8, 30, 44, 0.45);
+        align-content: end;
       }
 
       .window:hover {
         color: var(--ink);
-        background: rgba(230, 195, 106, 0.06);
       }
 
       .window[aria-current="page"] {
-        color: var(--sun);
-        background: rgba(230, 195, 106, 0.12);
+        color: var(--jade);
       }
 
       .window-ticks {
         display: block;
-        height: 34px;
-        opacity: 0.55;
+        height: 3px;
+        opacity: 0.45;
         background-image: repeating-linear-gradient(
           90deg,
           currentColor 0 1px,
@@ -241,10 +252,16 @@ export function previewPage(state: PreviewState): string {
       }
 
       .window[aria-current="page"] .window-ticks {
-        opacity: 0.9;
+        opacity: 1;
+        animation: tick-pulse 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+      }
+
+      @keyframes tick-pulse {
+        50% { opacity: 0.55; }
       }
 
       .window-label {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
         font-size: 0.92rem;
         font-weight: 500;
       }
@@ -284,7 +301,10 @@ export function previewPage(state: PreviewState): string {
         color: var(--mute);
         font-weight: 500;
         border-bottom: 1px solid transparent;
-        padding-bottom: 2px;
+        padding: 10px 0 2px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
       }
 
       .choice:hover {
@@ -292,27 +312,28 @@ export function previewPage(state: PreviewState): string {
       }
 
       .choice[aria-current="page"] {
-        color: var(--sun);
-        border-bottom-color: var(--sun);
+        color: var(--jade);
+        border-bottom-color: var(--jade);
       }
 
       .snippet-wrap {
         margin: 0;
         padding: 12px 14px;
-        background: var(--tray);
-        border: 1px solid rgba(143, 176, 192, 0.22);
+        background: var(--surface);
+        border: 1px solid var(--hair);
+        border-radius: 0.6rem;
         overflow: auto;
       }
 
       .snippet {
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
         font-size: 0.82rem;
         line-height: 1.5;
-        color: var(--rinse);
+        color: var(--ink);
         white-space: nowrap;
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 767px) {
         .mast,
         .deck {
           grid-template-columns: 1fr;
@@ -320,15 +341,12 @@ export function previewPage(state: PreviewState): string {
 
         .page {
           width: min(1080px, calc(100% - 24px));
-          padding-top: 20px;
         }
 
-        .window {
-          padding: 10px 10px 12px;
-        }
-
-        .window-ticks {
-          height: 24px;
+        h1 .spark {
+          display: block;
+          height: 0.7em;
+          margin: 0.14em 0 0.1em;
         }
       }
 
@@ -336,13 +354,22 @@ export function previewPage(state: PreviewState): string {
         .copy:active {
           transform: none;
         }
+
+        .spark-line,
+        .window[aria-current="page"] .window-ticks {
+          animation: none;
+        }
+
+        .spark-line {
+          stroke-dashoffset: 0;
+        }
       }
     </style>
   </head>
   <body>
     <main class="page">
       <header class="mast">
-        <h1>Contribution line</h1>
+        <h1>Contribution <svg class="spark" viewBox="0 0 88 32" aria-hidden="true"><rect width="88" height="32" rx="6" fill="#18181B"/><polyline class="spark-line" points="6,22 18,16 28,18 40,10 52,14 64,7 82,12"/></svg> line</h1>
         <div>
           <p class="lede">The SVG your profile README will load. Pick a window, then copy the image markdown.</p>
           <button class="copy" type="button" id="copy">Copy README image</button>
@@ -354,7 +381,7 @@ export function previewPage(state: PreviewState): string {
           <p class="well-meta">${who}last ${days} days</p>
           <img src="${escapeHtml(graphSrc)}" alt="Contribution activity graph"/>
         </div>
-        <nav class="ruler" aria-label="Time window">
+        <nav class="windows" aria-label="Time window">
           ${windows}
         </nav>
       </section>
