@@ -1,49 +1,12 @@
 import type { ContributionDay, Contributions } from "./github.js";
 import type { Theme } from "./themes.js";
+import { escapeXml, formatMonthDay, round } from "./svg.js";
 
 const WIDTH = 840;
 const HEIGHT = 320;
 const PAD = { top: 64, right: 28, bottom: 40, left: 52 };
 
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-] as const;
-
 type Point = { x: number; y: number };
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-function formatLabel(isoDate: string, includeDay: boolean): string {
-  const parts = isoDate.split("-");
-  const monthIndex = Number(parts[1]) - 1;
-  const month = MONTHS[monthIndex] ?? "Jan";
-  if (!includeDay) {
-    return month;
-  }
-  return `${month} ${Number(parts[2])}`;
-}
 
 function pickLabels(days: readonly ContributionDay[]): { index: number; text: string }[] {
   if (days.length === 0) {
@@ -63,7 +26,7 @@ function pickLabels(days: readonly ContributionDay[]): { index: number; text: st
         continue;
       }
       seen.add(key);
-      byMonth.push({ index: i, text: formatLabel(day.date, false) });
+      byMonth.push({ index: i, text: formatMonthDay(day.date, false) });
     }
     if (byMonth.length <= 8) {
       return byMonth;
@@ -89,7 +52,7 @@ function pickLabels(days: readonly ContributionDay[]): { index: number; text: st
     if (!day) {
       continue;
     }
-    labels.push({ index, text: formatLabel(day.date, true) });
+    labels.push({ index, text: formatMonthDay(day.date, true) });
   }
   return labels;
 }

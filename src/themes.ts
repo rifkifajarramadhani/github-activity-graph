@@ -13,6 +13,9 @@ export type Theme = {
   point: string;
   mono: string;
   peak: string;
+  streakActive: string;
+  streakPast: string;
+  caliper: string;
 };
 
 export const themes = {
@@ -29,6 +32,9 @@ export const themes = {
     point: "#5B9E7E",
     mono: "#A1A1AA",
     peak: "#5B9E7E",
+    streakActive: "#5B9E7E",
+    streakPast: "rgba(91,158,126,0.45)",
+    caliper: "#71717A",
   },
   light: {
     name: "light",
@@ -43,6 +49,9 @@ export const themes = {
     point: "#5B9E7E",
     mono: "#52525B",
     peak: "#5B9E7E",
+    streakActive: "#5B9E7E",
+    streakPast: "rgba(91,158,126,0.45)",
+    caliper: "#71717A",
   },
 } as const satisfies Record<ThemeName, Theme>;
 

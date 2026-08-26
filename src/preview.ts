@@ -2,6 +2,7 @@ import type { ThemeName } from "./themes.js";
 
 export type PreviewState = {
   graphSrc: string;
+  streakSrc: string;
   username: string;
   days: number;
   theme: ThemeName;
@@ -34,7 +35,7 @@ function href(state: Pick<PreviewState, "days" | "theme" | "hideBorder">): strin
 }
 
 export function previewPage(state: PreviewState): string {
-  const { graphSrc, username, days, theme, hideBorder } = state;
+  const { graphSrc, streakSrc, username, days, theme, hideBorder } = state;
   const who = username ? `${escapeHtml(username)} · ` : "";
   const windows = WINDOWS.map((windowDays) => {
     const current = windowDays === days;
@@ -371,8 +372,8 @@ export function previewPage(state: PreviewState): string {
       <header class="mast">
         <h1>Contribution <svg class="spark" viewBox="0 0 88 32" aria-hidden="true"><rect width="88" height="32" rx="6" fill="#18181B"/><polyline class="spark-line" points="6,22 18,16 28,18 40,10 52,14 64,7 82,12"/></svg> line</h1>
         <div>
-          <p class="lede">The SVG your profile README will load. Pick a window, then copy the image markdown.</p>
-          <button class="copy" type="button" id="copy">Copy README image</button>
+          <p class="lede">The SVGs your profile README will load. Pick a window for the line, then copy both.</p>
+          <button class="copy" type="button" id="copy">Copy README images</button>
         </div>
       </header>
 
@@ -386,9 +387,16 @@ export function previewPage(state: PreviewState): string {
         </nav>
       </section>
 
+      <section class="stage" aria-label="Streak preview">
+        <div class="well">
+          <p class="well-meta">${who}full history</p>
+          <img src="${escapeHtml(streakSrc)}" alt="Contribution streak rail"/>
+        </div>
+      </section>
+
       <section class="deck" aria-label="Embed options">
         <div class="field">
-          <p class="field-label">Card</p>
+          <p class="field-label">Theme</p>
           <div class="choices">
             <a class="choice" href="${escapeHtml(href({ days, theme: "dark", hideBorder }))}"${theme === "dark" ? ' aria-current="page"' : ""}>Dark</a>
             <a class="choice" href="${escapeHtml(href({ days, theme: "light", hideBorder }))}"${theme === "light" ? ' aria-current="page"' : ""}>Light</a>
@@ -402,31 +410,40 @@ export function previewPage(state: PreviewState): string {
           </div>
         </div>
         <div class="field field-embed">
-          <p class="field-label">README markdown</p>
-          <pre class="snippet-wrap"><code class="snippet" id="snippet" data-path="${escapeHtml(graphSrc)}">![Activity Graph](${escapeHtml(graphSrc)})</code></pre>
+          <p class="field-label">Graph markdown</p>
+          <pre class="snippet-wrap"><code class="snippet" id="snippet-graph" data-path="${escapeHtml(graphSrc)}">![Activity Graph](${escapeHtml(graphSrc)})</code></pre>
+        </div>
+        <div class="field field-embed">
+          <p class="field-label">Streak markdown</p>
+          <pre class="snippet-wrap"><code class="snippet" id="snippet-streak" data-path="${escapeHtml(streakSrc)}">![Streak](${escapeHtml(streakSrc)})</code></pre>
         </div>
       </section>
     </main>
     <script>
       (function () {
-        var snippet = document.getElementById("snippet");
+        var graphEl = document.getElementById("snippet-graph");
+        var streakEl = document.getElementById("snippet-streak");
         var button = document.getElementById("copy");
-        if (!snippet || !button) return;
-        var path = snippet.getAttribute("data-path") || "/graph";
-        var markdown = "![Activity Graph](" + location.origin + path + ")";
-        snippet.textContent = markdown;
+        if (!graphEl || !streakEl || !button) return;
+        var graphPath = graphEl.getAttribute("data-path") || "/graph";
+        var streakPath = streakEl.getAttribute("data-path") || "/streak";
+        var graphMd = "![Activity Graph](" + location.origin + graphPath + ")";
+        var streakMd = "![Streak](" + location.origin + streakPath + ")";
+        var markdown = graphMd + "\\n" + streakMd;
+        graphEl.textContent = graphMd;
+        streakEl.textContent = streakMd;
         button.addEventListener("click", function () {
           function fail() {
-            button.textContent = "Copy failed — select the snippet";
+            button.textContent = "Copy failed — select a snippet";
           }
           if (!navigator.clipboard) {
             fail();
             return;
           }
           navigator.clipboard.writeText(markdown).then(function () {
-            button.textContent = "Copied README image";
+            button.textContent = "Copied README images";
             window.setTimeout(function () {
-              button.textContent = "Copy README image";
+              button.textContent = "Copy README images";
             }, 2000);
           }, fail);
         });

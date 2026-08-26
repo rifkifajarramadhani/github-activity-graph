@@ -1,12 +1,13 @@
 # GitHub activity graph
 
-Self-hosted SVG line chart of **your** GitHub contributions. Embed it in a profile README the same way you would any image.
+Self-hosted SVG cards of **your** GitHub contributions: a line chart of the recent window, and a streak rail over the full account history. Embed either in a profile README the same way you would any image.
 
 ```markdown
 ![Activity Graph](https://your-domain.example/graph)
+![Streak](https://your-domain.example/streak)
 ```
 
-Username is pinned in the environment. The `/graph` endpoint does not accept `?username=`, so other people cannot spend your GitHub API quota.
+Username is pinned in the environment. The image endpoints do not accept `?username=`, so other people cannot spend your GitHub API quota.
 
 ## Setup
 
@@ -24,15 +25,28 @@ npm install
 npm run dev
 ```
 
-Open [http://127.0.0.1:3000](http://127.0.0.1:3000) for a preview. The image itself is [http://127.0.0.1:3000/graph](http://127.0.0.1:3000/graph).
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) for a preview. The graph image is [http://127.0.0.1:3000/graph](http://127.0.0.1:3000/graph); the streak rail is [http://127.0.0.1:3000/streak](http://127.0.0.1:3000/streak).
 
 ## Query parameters
+
+Shared by `/graph` and `/streak`:
 
 | Param | Default | Notes |
 | --- | --- | --- |
 | `theme` | `dark` | `dark` or `light` |
-| `days` | `31` | Clamped to 7–365 |
 | `hide_border` | `false` | `true` or `1` |
+
+`/graph` only:
+
+| Param | Default | Notes |
+| --- | --- | --- |
+| `days` | `31` | Clamped to 7–365 |
+
+`/streak` only:
+
+| Param | Default | Notes |
+| --- | --- | --- |
+| `rail_days` | `180` | Floor for the visible rail. The rail is `max(rail_days, current streak + 30)`, clamped to history length. |
 
 Examples:
 
@@ -40,7 +54,11 @@ Examples:
 ![Activity Graph](https://your-domain.example/graph)
 ![Activity Graph](https://your-domain.example/graph?theme=light)
 ![Activity Graph](https://your-domain.example/graph?days=90&hide_border=true)
+![Streak](https://your-domain.example/streak)
+![Streak](https://your-domain.example/streak?theme=light&hide_border=true)
 ```
+
+`/streak` loads the account's full contribution history. GitHub's calendar API only returns one year per field, so the first request asks for `createdAt`, then one aliased GraphQL document covering each year since (one HTTP round-trip for typical accounts; year-by-year if GitHub rejects the batched query). That payload is cached in memory for one hour, same as `/graph`.
 
 ## Docker
 
@@ -102,6 +120,7 @@ Contribution data is cached in memory for one hour. GitHub API failures reuse th
 
 ## Endpoints
 
-- `GET /graph` — SVG card
+- `GET /graph` — SVG line chart
+- `GET /streak` — SVG streak rail over full history
 - `GET /health` — `{ "ok": true }`
-- `GET /` — HTML preview of `/graph`
+- `GET /` — HTML preview of both cards

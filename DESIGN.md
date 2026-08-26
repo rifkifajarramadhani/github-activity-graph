@@ -18,6 +18,7 @@ The SVG card is the product. It must sit on GitHub's own canvas (`#0D1117` dark,
 - **Hairline** (`rgba(113, 113, 122, 0.18)`) — Card edge, chart grid, preview dividers. One structural weight: 1px.
 - **Jade Signal** (`#5B9E7E`) — The only accent. Line stroke, terminal dot, peak marker, primary button fill, focus ring, active window underline. Saturation well under 80%. No second accent.
 - **Jade Wash** (`#5B9E7E` at 16% → 0%) — Area fill under the line. Supports the stroke; never competes with it.
+- **Jade Past** (`#5B9E7E` at 45%) — Contributing days on the streak rail that sit outside the live run.
 
 Banned: `#000000`, purple, neon, a second accent, warm/cool gray mixing, GitHub blue (`#58A6FF` / `#0969DA`).
 
@@ -32,7 +33,8 @@ Banned: `#000000`, purple, neon, a second accent, warm/cool gray mixing, GitHub 
 
 ## 4. Component Stylings
 
-- **Embed card:** 840×320. Corner radius 12px — enough to soften the README slot, not a pill. Default edge is Hairline; `hide_border=true` removes it. Interior: title left, tally right, one mid grid + baseline, jade line, terminal ring, peak value.
+- **Embed card (graph):** 840×320. Corner radius 12px — enough to soften the README slot, not a pill. Default edge is Hairline; `hide_border=true` removes it. Interior: title left, tally right, one mid grid + baseline, jade line, terminal ring, peak value.
+- **Embed card (streak):** 840×280. Same chrome as the graph card. Left-aligned title and lifetime tally, then the current length in 34px tabular mono on the left and longest length (11px) plus its dates (10px) right-aligned in Muted Steel. Longest is always printed, including when it equals the current run. The signature is the day-rail: contributing days are jade ticks (full Jade Signal on the live streak, 45% jade on older runs), zero days are literal gaps over a Hairline baseline. Dimension-line calipers hang under the rail — current in Jade Signal, longest in Muted Steel only when that run is in the rail window and is not the same span as current. The rail window is `max(rail_days, current + 30)`, clamped to history length, default 180 days, so the live streak is always fully in frame. Rail end-dates are printed at the baseline so the viewport never pretends to be all-time. Zero history: `0 DAYS` / `NO CONTRIBUTIONS YET`, longest omitted.
 - **Buttons:** Flat Jade Signal fill, Ink-on-jade (`#09090B` text). No outer glow. Tactile `translateY(1px)` on active. Minimum 44px tall. Ghost/underline links for secondary choices (theme, border).
 - **Cards / trays:** Preview well uses 1.25rem radius and a shadow tinted to Zinc Ground (`rgba(9, 9, 11, 0.45)`). Elevation exists only to seat the SVG. High-density rows (window picker, theme/border) use hairlines and space, not extra cards.
 - **Inputs:** None on this surface. Theme, window, and border are link choices with the label above the row.
@@ -44,15 +46,15 @@ Banned: `#000000`, purple, neon, a second accent, warm/cool gray mixing, GitHub 
 
 ## 5. Layout Principles
 
-Grid-first. Preview max-width 1080px, centered, with `clamp(3rem, 8vw, 6rem)` vertical gaps. Hero is a two-column split (headline | lede + one CTA), never centered. The inline sparkline in the headline sits at cap-height between the two words, rounded, in its own spatial zone — no overlap. The stage stacks well then window row; the deck below is two fields then a full-width snippet. CSS Grid only; no `calc()` percentage hacks. Full-height shell uses `min-height: 100dvh`.
+Grid-first. Preview max-width 1080px, centered, with `clamp(3rem, 8vw, 6rem)` vertical gaps. Hero is a two-column split (headline | lede + one CTA), never centered. The inline sparkline in the headline sits at cap-height between the two words, rounded, in its own spatial zone — no overlap. The stage stacks the graph well and its window row, then the streak well; the deck below is theme and border, then two full-width snippets. CSS Grid only; no `calc()` percentage hacks. Full-height shell uses `min-height: 100dvh`.
 
 **Responsive:** Below 768px every multi-column grid collapses to one column. No horizontal overflow. Headlines keep `clamp()`. Body text minimum 1rem. Interactive targets minimum 44px. The inline sparkline drops under the first word rather than squeezing the headline. Desktop nav is the window row; it wraps, it does not become a hamburger.
 
 ## 6. Motion & Interaction
 
-Spring-ish easing `cubic-bezier(0.16, 1, 0.3, 1)`, stiffness analogue of 100 / damping 20. The card line draws on over 1.1s via `stroke-dashoffset` (transform-equivalent; the geometry does not animate). Active window ticks hold a slow opacity pulse (2.8s). The headline sparkline shimmers its stroke once on load. Copy button has no hover glow — brightness is banned; hover is a 4% mix toward Canvas Paper. Animate `transform` and `opacity` only.
+Spring-ish easing `cubic-bezier(0.16, 1, 0.3, 1)`, stiffness analogue of 100 / damping 20. The graph line draws on over 1.1s via `stroke-dashoffset` (transform-equivalent; the geometry does not animate). The streak rail reveals under a `clipPath` rect translated on X over 1.1s, then the current caliper draws on via `stroke-dashoffset` with a 0.35s delay. Active window ticks hold a slow opacity pulse (2.8s). The headline sparkline shimmers its stroke once on load. Copy button has no hover glow — brightness is banned; hover is a 4% mix toward Canvas Paper. Animate `transform` and `opacity` only.
 
-`prefers-reduced-motion: reduce` cancels the draw-on (path renders complete), the sparkle, and the tick pulse. Active-state `translateY` is also removed.
+`prefers-reduced-motion: reduce` cancels the draw-on (path and rail render complete), the sparkle, and the tick pulse. Active-state `translateY` is also removed.
 
 ## 7. Anti-Patterns (Banned)
 
