@@ -193,11 +193,16 @@ export function previewPage(state: PreviewState): string {
         color: var(--mute);
       }
 
-      .well img {
+      .well img,
+      .well object {
         width: 100%;
         height: auto;
         display: block;
         border-radius: 12px;
+      }
+
+      .well object {
+        aspect-ratio: 840 / 320;
       }
 
       .windows {
@@ -380,7 +385,7 @@ export function previewPage(state: PreviewState): string {
       <section class="stage" aria-label="Graph preview">
         <div class="well">
           <p class="well-meta">${who}last ${days} days</p>
-          <img src="${escapeHtml(graphSrc)}" alt="Contribution activity graph"/>
+          <object type="image/svg+xml" data="${escapeHtml(graphSrc)}" aria-label="Contribution activity graph"></object>
         </div>
         <nav class="windows" aria-label="Time window">
           ${windows}

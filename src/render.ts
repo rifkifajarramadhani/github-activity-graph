@@ -158,6 +158,61 @@ function peakAnchor(x: number): "start" | "middle" | "end" {
   return "middle";
 }
 
+function hitSpan(index: number, count: number, innerWidth: number): { x: number; width: number } {
+  if (count <= 1) {
+    return { x: PAD.left, width: innerWidth };
+  }
+  const lastIndex = count - 1;
+  const left = index === 0 ? PAD.left : PAD.left + ((index - 0.5) / lastIndex) * innerWidth;
+  const right =
+    index === lastIndex ? PAD.left + innerWidth : PAD.left + ((index + 0.5) / lastIndex) * innerWidth;
+  return { x: left, width: right - left };
+}
+
+function contributionTitle(count: number, date: string): string {
+  const noun = count === 1 ? "contribution" : "contributions";
+  return `${count} ${noun} on ${formatMonthDay(date, true)}`;
+}
+
+function hitColumnsSvg(args: {
+  days: readonly ContributionDay[];
+  points: readonly Point[];
+  theme: Theme;
+  innerWidth: number;
+  baseline: number;
+}): string {
+  const { days, points, theme, innerWidth, baseline } = args;
+  const plotHeight = baseline - PAD.top;
+  return days
+    .map((day, index) => {
+      const point = points[index];
+      if (!point) {
+        return "";
+      }
+      const span = hitSpan(index, days.length, innerWidth);
+      const anchor = peakAnchor(point.x);
+      const countY = round(Math.max(44, point.y - 22));
+      const dateY = round(Math.max(56, point.y - 10));
+      const x = round(point.x);
+      const hairline =
+        day.contributionCount > 0
+          ? `<line x1="${x}" y1="${round(point.y)}" x2="${x}" y2="${round(baseline)}" stroke="${theme.grid}" stroke-width="1"/>`
+          : "";
+      return `<g class="ag-hit">
+    <title>${escapeXml(contributionTitle(day.contributionCount, day.date))}</title>
+    <rect class="ag-hit-area" x="${round(span.x)}" y="${PAD.top}" width="${round(span.width)}" height="${round(plotHeight)}" fill="transparent"/>
+    <g class="ag-readout">
+      ${hairline}
+      <circle cx="${x}" cy="${round(point.y)}" r="5" fill="${theme.background}"/>
+      <circle cx="${x}" cy="${round(point.y)}" r="3" fill="${theme.point}"/>
+      <text class="ag-mono" x="${x}" y="${countY}" text-anchor="${anchor}" fill="${theme.mono}" font-size="10">${day.contributionCount}</text>
+      <text class="ag-mono" x="${x}" y="${dateY}" text-anchor="${anchor}" fill="${theme.mono}" font-size="10">${escapeXml(formatMonthDay(day.date, true))}</text>
+    </g>
+  </g>`;
+    })
+    .join("");
+}
+
 export function renderGraph(args: {
   username: string;
   contributions: Contributions;
@@ -221,8 +276,16 @@ export function renderGraph(args: {
     const labelY = round(Math.max(44, peakPoint.y - 12));
     peakSvg =
       marker +
-      `<text class="ag-mono" x="${round(peakPoint.x)}" y="${labelY}" text-anchor="${peakAnchor(peakPoint.x)}" fill="${theme.mono}" font-size="10">${peakCount}</text>`;
+      `<text class="ag-mono ag-peak" x="${round(peakPoint.x)}" y="${labelY}" text-anchor="${peakAnchor(peakPoint.x)}" fill="${theme.mono}" font-size="10">${peakCount}</text>`;
   }
+
+  const hitsSvg = hitColumnsSvg({
+    days: contributions.days,
+    points,
+    theme,
+    innerWidth,
+    baseline,
+  });
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-label="${escapeXml(title)}">
@@ -241,6 +304,10 @@ export function renderGraph(args: {
       stroke-dashoffset: ${round(pathLength)};
       animation: ag-draw 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+    .ag-hit-area { pointer-events: all; }
+    .ag-readout { opacity: 0; pointer-events: none; }
+    .ag-hit:hover .ag-readout { opacity: 1; }
+    svg:has(.ag-hit:hover) .ag-peak { opacity: 0; }
     @keyframes ag-draw {
       to { stroke-dashoffset: 0; }
     }
@@ -263,6 +330,7 @@ export function renderGraph(args: {
   ${linePath ? `<path class="ag-line" d="${linePath}" stroke="${theme.line}" stroke-width="2"/>` : ""}
   ${peakSvg}
   ${lastPointSvg}
+  ${hitsSvg}
 </svg>`;
 }
 

@@ -54,7 +54,9 @@ Grid-first. Preview max-width 1080px, centered, with `clamp(3rem, 8vw, 6rem)` ve
 
 Spring-ish easing `cubic-bezier(0.16, 1, 0.3, 1)`, stiffness analogue of 100 / damping 20. The graph line draws on over 1.1s via `stroke-dashoffset` (transform-equivalent; the geometry does not animate). The streak rail reveals under a `clipPath` rect translated on X over 1.1s, then the current caliper draws on via `stroke-dashoffset` with a 0.35s delay. Active window ticks hold a slow opacity pulse (2.8s). The headline sparkline shimmers its stroke once on load. Copy button has no hover glow — brightness is banned; hover is a 4% mix toward Canvas Paper. Animate `transform` and `opacity` only.
 
-`prefers-reduced-motion: reduce` cancels the draw-on (path and rail render complete), the sparkle, and the tick pulse. Active-state `translateY` is also removed.
+Hovering a day column on the graph card reveals a scope cursor: Hairline stem, Jade Signal sample ring, and a tabular Mono Mist stack of the day's count and `Mon D` date. The always-on peak numeral hides while any column is hovered so two numbers do not compete. This interaction only exists when the SVG is a document (preview `<object>`, or `GET /graph` opened directly). README `<img>` embeds stay a snapshot. Show/hide is instant opacity, including under `prefers-reduced-motion`.
+
+`prefers-reduced-motion: reduce` cancels the draw-on (path and rail render complete), the sparkle, and the tick pulse. Active-state `translateY` is also removed. The graph cursor does not animate.
 
 ## 7. Anti-Patterns (Banned)
 
