@@ -4,6 +4,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 
 import { getContributions } from "./github.js";
+import { previewPage } from "./preview.js";
 import { renderErrorGraph, renderGraph } from "./render.js";
 import { themeFromQuery } from "./themes.js";
 
@@ -53,14 +54,6 @@ function graphOptionsFromQuery(query: {
   };
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
 function svgResponse(body: string, maxAgeSeconds: number): Response {
   return new Response(body, {
     status: 200,
@@ -71,50 +64,6 @@ function svgResponse(body: string, maxAgeSeconds: number): Response {
   });
 }
 
-function previewPage(graphSrc: string): string {
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>GitHub activity graph</title>
-    <style>
-      :root { color-scheme: dark; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: "Segoe UI", Ubuntu, sans-serif;
-        background: #0d1117;
-        color: #e6edf3;
-        display: grid;
-        place-items: center;
-      }
-      main { width: min(880px, calc(100% - 32px)); padding: 32px 0; }
-      h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 8px; }
-      p { color: #8b949e; margin: 0 0 20px; line-height: 1.5; }
-      code { color: #79c0ff; }
-      nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
-      a { color: #58a6ff; }
-      img { width: 100%; height: auto; display: block; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>GitHub activity graph</h1>
-      <p>Preview of <code>/graph</code>. Point your profile README at this URL once it is on HTTPS.</p>
-      <img src="${escapeHtml(graphSrc)}" alt="Contribution activity graph"/>
-      <nav>
-        <a href="/">31 days, dark</a>
-        <a href="/?theme=light">Light</a>
-        <a href="/?days=90">90 days</a>
-        <a href="/?days=365">365 days</a>
-        <a href="/?hide_border=true">No border</a>
-      </nav>
-    </main>
-  </body>
-</html>`;
-}
-
 const app = new Hono();
 
 app.get("/health", (c) => c.json({ ok: true }));
@@ -122,7 +71,21 @@ app.get("/health", (c) => c.json({ ok: true }));
 app.get("/", (c) => {
   const url = new URL(c.req.url);
   const graphSrc = url.search ? `/graph${url.search}` : "/graph";
-  return c.html(previewPage(graphSrc));
+  const options = graphOptionsFromQuery({
+    days: c.req.query("days"),
+    hide_border: c.req.query("hide_border"),
+    theme: c.req.query("theme"),
+  });
+  const theme = themeFromQuery(options.themeQuery);
+  return c.html(
+    previewPage({
+      graphSrc,
+      username: readConfig().username,
+      days: options.days,
+      theme: theme.name,
+      hideBorder: options.hideBorder,
+    }),
+  );
 });
 
 app.get("/graph", async (c) => {
