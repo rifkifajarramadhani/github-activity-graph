@@ -1,0 +1,10 @@
+services:
+  activity-graph:
+    build:
+      context: .
+      target: dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./src:/app/src
+      - ./tsconfig.json:/app/tsconfig.json

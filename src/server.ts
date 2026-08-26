@@ -11,6 +11,7 @@ import { themeFromQuery } from "./themes.js";
 const DEFAULT_DAYS = 31;
 const MIN_DAYS = 7;
 const MAX_DAYS = 365;
+const isDev = process.env.NODE_ENV !== "production";
 
 type GraphOptions = {
   days: number;
@@ -59,7 +60,7 @@ function svgResponse(body: string, maxAgeSeconds: number): Response {
     status: 200,
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": `public, max-age=${maxAgeSeconds}`,
+      "Cache-Control": isDev ? "no-store" : `public, max-age=${maxAgeSeconds}`,
     },
   });
 }
